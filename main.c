@@ -107,6 +107,7 @@ static void One_wire_data_pin_Init(void);
 static void data_pin_set_input(void);
 static void data_pin_set_output(void);
 void OWRead_data(void);
+static void data_pin_input_pullup(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -160,9 +161,9 @@ int main(void)
   {
     /* USER CODE END WHILE */
     //MX_SubGHz_Phy_Process();
-	  DWT_Delay(1000);
+
 	  OWRead_data();
-	  DWT_Delay(1000);
+	  HAL_Delay(2000);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -283,25 +284,59 @@ static void data_pin_set_output(void)
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 }
+static void data_pin_input_pullup(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+
+
+  /*Configure GPIO pin : PA9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+}
 
 void OWRead_data(void)
 {
         uint8_t loop, result[40]={0,0,0,0};
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);
-       	        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET); // Drives DQ low
-       	        DWT_Delay(2000);
-       	        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);// Releases the bus
-       	        DWT_Delay(28);
-       	        data_pin_set_input();
-       	        DWT_Delay(160);
-        for (loop = 0; loop < 40; loop++)
-        {
-                // shift the result to get it ready for the next bit
+        data_pin_input_pullup();
+        HAL_Delay(1);
+        data_pin_set_output();
+       	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET); // Drives DQ low
+        DWT_Delay(1100);
+       	data_pin_input_pullup();
 
-        	    DWT_Delay(85);
+        DWT_Delay(32);
+        while(!(HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_9)))
+           {
+
+            }
+        while((HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_9)))
+            {
+
+            }
+        for (loop = 0; loop < 40; loop++)
+        {   uint16_t count = 0;
+        	while(!(HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_9)))
+              {
+
+              }
+        	while((HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_9)))
+        	    {
+                        count = count + 1;
+        	        }
+        	// shift the result to get it ready for the next bit
+
+
                 // if result is one, then set MS bit
-                if ((HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_9)))
+                if (count>210)
                  {   result[loop] = '1';
 
                  }
@@ -311,9 +346,7 @@ void OWRead_data(void)
                  }
 
         }
-        data_pin_set_output();
 
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);
         uint8_t RH_Data[16];
         uint8_t T_Data[16];
         uint8_t crc[8];
