@@ -313,15 +313,15 @@ void OWRead_data(void)
         DWT_Delay(1100);
        	data_pin_input_pullup();
 
-        DWT_Delay(32);
+        DWT_Delay(37);
         while(!(HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_9)))
+          {
+
+           }
+        while((HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_9)))
            {
 
-            }
-        while((HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_9)))
-            {
-
-            }
+           }
         for (loop = 0; loop < 40; loop++)
         {   uint16_t count = 0;
         	while(!(HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_9)))
